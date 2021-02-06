@@ -1,0 +1,54 @@
+.App {
+    font-family: sans-serif;
+    text-align: center;
+  }
+  
+  .root {
+    width: 300px;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .root:not(.edit) .box
+  {
+    /* flex-grow works but interferes with sizes while dragging */
+    flex-grow: 1;  
+  }
+  
+  .box {
+    min-width: 96px;
+    height: 99px;
+    border: 1px solid green;
+    margin: 1px;
+  }
+  
+  .box.medium {
+    flex-basis: 50%;
+  }
+  
+  .box.large {
+    flex-basis: 100%;
+  }
+  
+  .box.hovered {
+    border: 1px solid red;
+  }
+
+  .box.hovered > .left {
+    position: relative;
+    background-color: burlywood;
+    left: 0;
+    top: 0;
+    height: 99px;
+    width: 48px;
+  }
+
+  .box.hovered > .right {
+    position: relative;
+    background-color: burlywood;
+    left: 48px;
+    top: 0;
+    height: 99px;
+    width: 48px;
+  }
+  
