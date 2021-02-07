@@ -8,7 +8,6 @@ export interface DraggableItem {
     label: string;
 }
 
-// TODO: begin using this
 export interface DraggablePosition {
     item: DraggableItem;
     left: number;
@@ -33,12 +32,12 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
 
     const onClick = (clickedItem: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
         console.log("Clicked", clickedItem)
-        if(selected)
+        if(selected && hovered)
         {     
             if(selected.key !== hovered?.item.key)
             {            
-                const selectedIntex = items.findIndex(item => item.key === selected.key);
-                const hoverIndex = items.findIndex(item => item.key === hovered?.item.key);
+                const selectedIntex = itemOrder[selected.key];
+                const hoverIndex = itemOrder[hovered.item.key];
                 const previous = hoverIndex === 0 ? 0 : hoverIndex - 1;
                 const next = hoverIndex >= items.length - 1 ? items.length - 1 : hoverIndex + 1;
 
@@ -78,39 +77,61 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
         setHoveredAfter(e.clientX > hovered.left + hovered.width / 2);
     }
 
+    const itemOrder = useMemo(() => items.reduce(function(map, obj, index) {
+            map[obj.key] = index;
+            return map;
+        }, {} as Record<number, number>), [items]);
+
     const controlledItems = useMemo(() => {
+        // don't show placeholder if hovering over the selected item
         if(!selected || !hovered || hovered.item.key === selected?.key)
         {
             return items;
         }
 
         const placeholder: DraggableItem = {...selected, key: -1};
-        const currentIndex = items.findIndex(item => item.key === hovered.item.key);
+        const hoveredIndex = itemOrder[hovered.item.key];
 
-        if(currentIndex < 0)
+        // mouse is hovering over the placeholder
+        if(hoveredIndex < 0)
         {
             return items;
         }
 
+        // don't show the placeholder when hovering over the closest half of the selected 2 neighbors
+        if(selected)
+        {
+            const selectedIndex = itemOrder[selected.key];
+            const prevRight = hoveredIndex === selectedIndex - 1 && hoveredAfter
+            const nextLeft = hoveredIndex === selectedIndex + 1 && !hoveredAfter
+
+            // prev item, don't hover over right side
+            if(prevRight || nextLeft)
+            {
+                return items;
+            }
+        }
+
+        // display the placeholder
         if(!hoveredAfter)
         {
-            if(currentIndex === 0)
+            if(hoveredIndex === 0)
             {
                 // put placeholder first
                 return [placeholder, ...items];
             }
-            return [...items.slice(0, currentIndex), placeholder, ...items.slice(currentIndex, items.length)];
+            return [...items.slice(0, hoveredIndex), placeholder, ...items.slice(hoveredIndex, items.length)];
         }
         else
         {
-            if(currentIndex === items.length - 1)
+            if(hoveredIndex === items.length - 1)
             {
                 // put placeholder last
                 return [...items, placeholder];
             }
-            return [...items.slice(0, currentIndex + 1), placeholder, ...items.slice(currentIndex + 1, items.length)];
+            return [...items.slice(0, hoveredIndex + 1), placeholder, ...items.slice(hoveredIndex + 1, items.length)];
         }
-    }, [hovered, hoveredAfter, items]);
+    }, [hoveredAfter, items, itemOrder]);
 
     // const transitions = useTransition(controlledItems, item => item.key, {
     //     from: { opacity: 0 },
@@ -132,6 +153,7 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
     //     </animated.div>)), [controlledItems]);
     
     
+    // TODO: return these as props from a hook
     const displayItems = useMemo(() => 
         controlledItems.map((item, index) => {     
                 const enabledProps = selected ? {
