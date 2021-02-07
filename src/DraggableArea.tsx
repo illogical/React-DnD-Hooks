@@ -40,7 +40,7 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
                 const selectedIntex = items.findIndex(item => item.key === selected.key);
                 const hoverIndex = items.findIndex(item => item.key === hovered?.item.key);
                 const previous = hoverIndex === 0 ? 0 : hoverIndex - 1;
-                const next = hoverIndex >= items.length - 1 ? items.length - 1 : hoverIndex;
+                const next = hoverIndex >= items.length - 1 ? items.length - 1 : hoverIndex + 1;
 
                 // update items array
                 onMove(selectedIntex, hoveredAfter ? next : previous );
