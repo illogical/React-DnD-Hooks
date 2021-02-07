@@ -60,12 +60,11 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
         {
             return;
         }
-        
-        setHovered({ item, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth });             
-    }
 
-    const onMouseLeave = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        setHovered(null);
+        if(item.key !== hovered?.item.key)
+        {
+            setHovered({ item, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth });  
+        }                  
     }
 
     const onMouseMove = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -158,7 +157,6 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
         controlledItems.map((item, index) => {     
                 const enabledProps = selected ? {
                     onMouseOver: onMouseOver(item),
-                    onMouseLeave: onMouseLeave(item),
                     onMouseMove: onMouseMove,                    
                     onClick: onClick(item)
                 } : {onClick: onClick(item)};
