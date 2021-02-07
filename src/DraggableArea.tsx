@@ -1,10 +1,11 @@
 import arrayMove from 'array-move';
 import React, { useMemo, useState } from 'react';
-import { animated, useTransition } from 'react-spring';
+//import { animated, useTransition } from 'react-spring';
 import './styles.css';
 
 export interface DraggableItem {
     key: number;
+    label: string;
 }
 
 // TODO: begin using this
@@ -16,34 +17,43 @@ export interface DraggablePosition {
 
 export interface DraggableProps {
     items: DraggableItem[];
-    onNewItem: (item: DraggableItem, currentIndex: number, newIndex: number) => void;
+    onSelect: (item: DraggableItem) => void;
+    onMove: (currentIndex: number, newIndex: number) => void;    
 }
 
-const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
+const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
     const [hovered, setHovered] = useState<DraggablePosition | null>(null);
     const [selected, setSelected] = useState<DraggableItem | null>(null);
-    const [mouseX, setMouseX] = useState(0);
     const [hoveredAfter, setHoveredAfter] = useState(false);
 
-    const onClick = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        console.log("Clicked", item)
-        if(selected)
-        {          
-            const selectedIntex = items.findIndex(item => item.key === selected.key);
-            const hoverIndex = items.findIndex(item => item.key === hovered?.item.key);
-            const previous = hoverIndex;
-            const next = hoverIndex >= items.length - 1 ? items.length - 1 : hoverIndex + 1;
+    const reset = () => {
+        setSelected(null);
+        setHovered(null);
+    }
 
-            // update items array
-            onNewItem(selected, selectedIntex, hoveredAfter ? next : previous );
+    const onClick = (clickedItem: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        console.log("Clicked", clickedItem)
+        if(selected)
+        {     
+            if(selected.key !== hovered?.item.key)
+            {            
+                const selectedIntex = items.findIndex(item => item.key === selected.key);
+                const hoverIndex = items.findIndex(item => item.key === hovered?.item.key);
+                const previous = hoverIndex === 0 ? 0 : hoverIndex - 1;
+                const next = hoverIndex >= items.length - 1 ? items.length - 1 : hoverIndex;
+
+                // update items array
+                onMove(selectedIntex, hoveredAfter ? next : previous );
+            }
 
             // deselect
-            setSelected(null);
-            setHovered(null);
+            reset();
 
             return;
         }
-        setSelected(item);        
+        //onSelect(clickedItem);    // TODO: Need to re-add the item instead of using array-move
+        setSelected(clickedItem);    
+        setHovered({ item: clickedItem, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth });   
     }
 
     const onMouseOver = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -52,10 +62,7 @@ const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
             return;
         }
         
-        if(hovered?.item.key != item.key)
-        {
-            setHovered({ item, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth }); 
-        }               
+        setHovered({ item, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth });             
     }
 
     const onMouseLeave = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -63,8 +70,6 @@ const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
     }
 
     const onMouseMove = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        setMouseX(e.clientX);
-        
         if(!hovered)
         {
             return;
@@ -74,12 +79,12 @@ const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
     }
 
     const controlledItems = useMemo(() => {
-        if(!hovered)
+        if(!selected || !hovered || hovered.item.key === selected?.key)
         {
             return items;
         }
 
-        const placeholder: DraggableItem = { key: -1 }
+        const placeholder: DraggableItem = {...selected, key: -1};
         const currentIndex = items.findIndex(item => item.key === hovered.item.key);
 
         if(currentIndex < 0)
@@ -87,7 +92,6 @@ const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
             return items;
         }
 
-        //TODO: splice the array and put item in the middle
         if(!hoveredAfter)
         {
             if(currentIndex === 0)
@@ -130,47 +134,67 @@ const Draggable: React.FC<DraggableProps> = ({ items, onNewItem }) => {
     
     const displayItems = useMemo(() => 
         controlledItems.map((item, index) => {     
-            const enabledProps = selected ? {
-                onMouseOver: onMouseOver(item),
-                onMouseLeave: onMouseLeave(item),
-                onMouseMove: onMouseMove
-             } : {};
+                const enabledProps = selected ? {
+                    onMouseOver: onMouseOver(item),
+                    onMouseLeave: onMouseLeave(item),
+                    onMouseMove: onMouseMove,                    
+                    onClick: onClick(item)
+                } : {onClick: onClick(item)};
             
-            return (<div    
-            key={index}   
-            {...enabledProps}      
-            className={`box ${hovered && item.key === hovered.item.key ? "hovered" : ""} ${item.key === -1 ? "placeholder" : ""}`}
-            onClick={onClick(item)}            
-            >
-                <div className={hoveredAfter ? "right" : "left"}></div>    
-                <div>{item.key.toString()}</div>     
-    
-            </div>)
-        }), [controlledItems, selected]);
+                return <DraggableBox 
+                    item={item} 
+                    key={index} 
+                    {...enabledProps} 
+                    hovered={hovered !== null && item.key === hovered.item.key && hovered.item.key !== selected?.key} 
+                    placeholder={item.key === -1}
+                    selected={selected !== null && selected.key === item.key} 
+                    hoveredAfter={hoveredAfter} />
+            }), [controlledItems, selected, hovered]);
 
  
 
     return (<div>
         <div className="root edit">{displayItems}</div>
-        <div>{mouseX > 0 ? mouseX : ""}</div>     
-        <div>{selected?.key}</div>
+        <br />
+        <div>{hovered && hovered.item.key}</div>
+        <div>{selected ? <div className="root single"><DraggableBox item={selected} /></div> : null}</div>
     </div>);
 }
 
 
   export const DroppableArea: React.FC = () => {
     const [items, setItems] = useState<DraggableItem[]>([
-        { key: 1 },
-        { key: 2 },
-        { key: 3 },
-        { key: 4 },
-        { key: 5 }
+        { key: 1, label: "box1" },
+        { key: 2, label: "box2" },
+        { key: 3, label: "box3" },
+        { key: 4, label: "box4" },
+        { key: 5, label: "box5" }
     ]);
 
-    const onNewItem = (item: DraggableItem, currentIndex: number, newIndex: number) => {
+    const onMove = (currentIndex: number, newIndex: number) => {
         setItems(arrayMove(items, currentIndex, newIndex));
     }
 
-    return <div><Draggable items={items} onNewItem={onNewItem} /></div>;
+    const onSelect = (item: DraggableItem) => {
+        setItems(items.filter((i => i.key !== item.key)));
+    }
+
+    return <div><Draggable items={items} onMove={onMove} onSelect={onSelect} /></div>;
   };
 
+  export interface DraggableBoxProps {
+      item: DraggableItem;
+      key?: number;
+      hovered?: boolean;
+      selected?: boolean;
+      placeholder?: boolean;
+      hoveredAfter?: boolean;
+  }
+
+  const DraggableBox = ({item, key, selected, hovered, hoveredAfter, placeholder, ...rest}: DraggableBoxProps) => (<div   
+    {...rest}   
+    key={key}       
+    className={`box ${hovered ? "hovered" : ""} ${placeholder ? "placeholder" : ""} ${selected ? "selected" : ""}`}       
+    >
+        <div className={hoveredAfter ? "right" : "left"}>{item.label}</div>     
+    </div>)

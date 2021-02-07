@@ -9,7 +9,13 @@
     flex-wrap: wrap;
   }
 
-  .root:not(.edit) .box
+  .single {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .root:not(.edit, .single) .box
   {
     /* flex-grow works but interferes with sizes while dragging */
     flex-grow: 1;  
@@ -51,7 +57,20 @@
     height: 99px;
     width: 48px;
   }
+
+  .box.hovered.left {
+    border-left: 2px solid black;
+  }
+
+  .box.hovered.right {
+    border-right: 2px solid black;
+  }
   
   .box.placeholder {
     border: 1px dashed purple;
   }
+
+  .box.selected:not(.placeholder) {
+    opacity: 0.5;
+  }
+  
