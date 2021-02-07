@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { animated, useTransition } from 'react-spring';
 import './styles.css';
 
 export interface DraggableItem {
@@ -7,26 +8,47 @@ export interface DraggableItem {
 
 // TODO: begin using this
 export interface DraggablePosition {
-    key: number;
-    index: number;
+    item: DraggableItem;
     left: number;
     width: number;
 }
 
-/*
-    Ideas
-    -should the DroppableArea keep track of the mouse movement?
-        -only want the current item to care when onMouseOver
-            -don't want all children to be iterated on every mouse movement.
-            -how will it work if the user wants to drop an item into the blank area at the end of the list?
-*/
+export interface DraggableProps {
+    items: DraggableItem[];
+}
 
-const useDraggable = (items: DraggableItem[]) => {
-    const [hovered, setHovered] = useState<DraggableItem | null>(null);
+const Draggable: React.FC<DraggableProps> = ({items}) => {
+    const [hovered, setHovered] = useState<DraggablePosition | null>(null);
     const [mouseX, setMouseX] = useState(0);
-    const [itemLeft, setItemLeft] = useState(0);
-    const [itemWidth, setItemWidth] = useState(0);
     const [hoveredAfter, setHoveredAfter] = useState(false);
+
+    const onMouseOver = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if(item.key === -1)
+        {
+            return;
+        }
+        
+        if(hovered?.item.key != item.key)
+        {
+            setHovered({ item, left: e.currentTarget.offsetLeft, width: e.currentTarget.clientWidth }); 
+        }               
+    }
+
+    const onMouseLeave = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        setHovered(null);
+        //window.removeEventListener("mousemove", onMouseMove);
+    }
+
+    const onMouseMove = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        setMouseX(e.clientX);
+        
+        if(!hovered)
+        {
+            return;
+        }
+
+        setHoveredAfter(e.clientX > hovered.left + hovered.width / 2);
+    }
 
     const controlledItems = useMemo(() => {
         if(!hovered)
@@ -35,7 +57,7 @@ const useDraggable = (items: DraggableItem[]) => {
         }
 
         const placeholder: DraggableItem = { key: -1 }
-        const currentIndex = items.findIndex(item => item.key === hovered.key);
+        const currentIndex = items.findIndex(item => item.key === hovered.item.key);
 
         if(currentIndex < 0)
         {
@@ -61,67 +83,48 @@ const useDraggable = (items: DraggableItem[]) => {
             }
             return [...items.slice(0, currentIndex + 1), placeholder, ...items.slice(currentIndex + 1, items.length)];
         }
-
-        // return items.reduce((prev, cur, index) => {            
-        //     return hoveredAfter ? [...prev, cur] : [...prev, cur];
-        // }, []as DraggableItem[]);
     }, [hovered, hoveredAfter]);
 
-    const onMouseEnter = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        if(item.key === -1)
-        {
-            return;
-        }
-        
-        setItemLeft(e.currentTarget.offsetLeft);
-        setItemWidth(e.currentTarget.clientWidth);
-        setHovered(item);        
-    }
+    // const transitions = useTransition(controlledItems, item => item.key, {
+    //     from: { opacity: 0 },
+    //     enter: { opacity: 1 },
+    //     //leave: { opacity: 0 },
+    // });
 
-    const onMouseLeave = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        setHovered(null);
-        //window.removeEventListener("mousemove", onMouseMove);
-    }
+    // const displayItems = useMemo(() => transitions.map(({ item, props, key }) => (<animated.div 
+    //     key={key}
+    //     style={props}
+    //     className={`box ${hovered && item.key === hovered.item.key ? "hovered" : ""} ${item.key === -1 ? "placeholder" : ""}`}
+    //     onMouseOver={onMouseOver(item)} 
+    //     onMouseLeave={onMouseLeave(item)}
+    //     onMouseMove={onMouseMove}
+    //     >
+    //         <div className={hoveredAfter ? "right" : "left"}></div>    
+    //         <div>{item.key.toString()}</div>     
 
-    // const onMouseOver = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-    //     setMouseX(e.clientX);
-    //     //window.addEventListener("mousemove", onMouseMove);
-    // }
+    //     </animated.div>)), [controlledItems]);
+    
+    
+    const displayItems = useMemo(() => 
+        controlledItems.map(item => {          
+            return (<div 
+            className={`box ${hovered && item.key === hovered.item.key ? "hovered" : ""} ${item.key === -1 ? "placeholder" : ""}`}
+            onMouseOver={onMouseOver(item)} 
+            onMouseLeave={onMouseLeave(item)}
+            onMouseMove={onMouseMove}
+            >
+                <div className={hoveredAfter ? "right" : "left"}></div>    
+                <div>{item.key.toString()}</div>     
+    
+            </div>)
+        }), [controlledItems]);
 
-    const onMouseMove = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        // TODO: need to know where this box is with relation to the mouse cursor (is the mouse cursor over the left or right side?)
-        setMouseX(e.clientX);
+ 
 
-        const left = e.currentTarget.offsetLeft;
-        const width = e.currentTarget.clientWidth;
-        //const top = e.currentTarget.offsetTop;
-
-        setHoveredAfter(e.clientX > itemLeft + itemWidth / 2);
-    }
-
-    const displayItems =  controlledItems.map(item => {
-        
-        
-        return (<div 
-        className={`box ${hovered && item.key === hovered.key ? "hovered" : ""}`}
-        onMouseEnter={onMouseEnter(item)} 
-        onMouseLeave={onMouseLeave(item)}
-        // onMouseOver={onMouseOver(item)}
-        onMouseMove={onMouseMove}
-        >
-            <div className={hoveredAfter ? "right" : "left"}></div>    
-            <div>{item.key.toString()}</div>     
-
-        </div>)
-    });
-
-    const display = <div>
-            <div className="root edit">{displayItems}</div>
-            <div>{mouseX > 0 ? mouseX : ""}</div>
-            <div>{itemLeft} - {itemLeft + itemWidth}</div>       
-        </div>
-
-    return [display] as const
+    return (<div>
+        <div className="root edit">{displayItems}</div>
+        <div>{mouseX > 0 ? mouseX : ""}</div>     
+    </div>);
 }
 
 
@@ -134,8 +137,8 @@ const useDraggable = (items: DraggableItem[]) => {
         { key: 5 }
     ]
     
-    const [display] = useDraggable(items);
+    //const [display] = useDraggable(items);
 
-    return <div>{display}</div>;
+    return <div><Draggable items={items} /></div>;
   };
 

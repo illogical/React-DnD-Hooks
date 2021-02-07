@@ -52,3 +52,6 @@
     width: 48px;
   }
   
+  .box.placeholder {
+    border: 1px dashed purple;
+  }
