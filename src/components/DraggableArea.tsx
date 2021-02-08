@@ -1,8 +1,8 @@
 import arrayMove from 'array-move';
 import React, { useMemo, useState } from 'react';
-import { DraggableBox } from './components/DraggableBox';
-import { DraggableItem } from './models/DraggableItem';
-import { DraggablePosition } from './models/DraggablePosition';
+import { DraggableBox } from './DraggableBox';
+import { DraggableItem } from '../models/DraggableItem';
+import { DraggablePosition } from '../models/DraggablePosition';
 //import { animated, useTransition } from 'react-spring';
 
 export interface DraggableProps {

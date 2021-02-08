@@ -13,7 +13,7 @@ export const useDraggable = (items: DraggableItem[]) => {
         return map;
     }, {} as Record<number, number>), [items]);
 
-    const controlledItems = useMemo(() => {
+    const managedItems = useMemo(() => {
         // don't show placeholder if hovering over the selected item
         if(!selected || !hovered || hovered.item.key === selected?.key)
         {
@@ -29,14 +29,13 @@ export const useDraggable = (items: DraggableItem[]) => {
             return items;
         }
 
-        // don't show the placeholder when hovering over the closest half of the selected 2 neighbors
+        // don't show the placeholder when hovering over the closest half of selected's 2 neighbors
         if(selected)
         {
             const selectedIndex = itemOrder[selected.key];
             const prevRight = hoveredIndex === selectedIndex - 1 && hoverAfter
             const nextLeft = hoveredIndex === selectedIndex + 1 && !hoverAfter
 
-            // prev item, don't hover over right side
             if(prevRight || nextLeft)
             {
                 return items;
@@ -69,12 +68,12 @@ export const useDraggable = (items: DraggableItem[]) => {
         setHovered(null);
     }
 
-    const props: useDraggableProps = {itemOrder, hovered, selected, hoverAfter, setHovered, setSelected, setHoverAfter, reset};
+    const props: DraggableHookProps = {itemOrder, hovered, selected, hoverAfter, setHovered, setSelected, setHoverAfter, reset};
 
-    return { controlledItems, props }
+    return { managedItems, props }
 }
 
-export interface useDraggableProps {
+export interface DraggableHookProps {
     hovered: DraggablePosition | null;
     selected: DraggableItem | null;
     hoverAfter: boolean;
@@ -85,7 +84,7 @@ export interface useDraggableProps {
     reset: () => void;     
 } 
 
-export interface useDraggableItemProps extends useDraggableProps {
+export interface useDraggableItemProps extends DraggableHookProps {
     item: DraggableItem;       
     onSelect: (item: DraggableItem) => void;
     onMove: (currentIndex: number, newIndex: number) => void;  
@@ -118,6 +117,7 @@ export const useDraggableItem = ({item, hovered, hoverAfter, selected, itemOrder
     }
 
     const onMouseOver = (item: DraggableItem) => (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        // ignore the placeholder
         if(item.key === -1)
         {
             return;

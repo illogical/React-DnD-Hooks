@@ -1,6 +1,6 @@
 import arrayMove from 'array-move';
-import React, { useMemo, useState } from 'react';
-import { useDraggable, useDraggableItem, useDraggableProps } from '../hooks/useDraggable';
+import React, { useState } from 'react';
+import { useDraggable, useDraggableItem, DraggableHookProps } from '../hooks/useDraggable';
 import { DraggableItem } from '../models/DraggableItem';
 import { DraggableBox } from './DraggableBox';
 
@@ -21,11 +21,10 @@ export const Sample = () => {
         setItems(items.filter((i => i.key !== item.key)));
     }
 
-    const { controlledItems, props } = useDraggable(items);
+    const { managedItems, props } = useDraggable(items);
 
-    const displayItems = controlledItems.map((item) => <Draggable item={item} props={props} onMove={onMove} onSelect={onSelect} />
+    const displayItems = managedItems.map((item) => <Draggable item={item} props={props} onMove={onMove} onSelect={onSelect} />
     );
-
 
     return (<div>
         <div className="root edit">{displayItems}</div>
@@ -37,7 +36,7 @@ export const Sample = () => {
 
 export interface DraggableProps {
     item: DraggableItem;
-    props: useDraggableProps;
+    props: DraggableHookProps;
     onSelect: (item: DraggableItem) => void;
     onMove: (currentIndex: number, newIndex: number) => void;  
 }
