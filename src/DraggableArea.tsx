@@ -1,18 +1,9 @@
 import arrayMove from 'array-move';
 import React, { useMemo, useState } from 'react';
+import { DraggableBox } from './components/DraggableBox';
+import { DraggableItem } from './models/DraggableItem';
+import { DraggablePosition } from './models/DraggablePosition';
 //import { animated, useTransition } from 'react-spring';
-import './styles.css';
-
-export interface DraggableItem {
-    key: number;
-    label: string;
-}
-
-export interface DraggablePosition {
-    item: DraggableItem;
-    left: number;
-    width: number;
-}
 
 export interface DraggableProps {
     items: DraggableItem[];
@@ -202,19 +193,3 @@ const Draggable: React.FC<DraggableProps> = ({ items, onSelect, onMove }) => {
     return <div><Draggable items={items} onMove={onMove} onSelect={onSelect} /></div>;
   };
 
-  export interface DraggableBoxProps {
-      item: DraggableItem;
-      key?: number;
-      hovered?: boolean;
-      selected?: boolean;
-      placeholder?: boolean;
-      hoveredAfter?: boolean;
-  }
-
-  const DraggableBox = ({item, key, selected, hovered, hoveredAfter, placeholder, ...rest}: DraggableBoxProps) => (<div   
-    {...rest}   
-    key={key}       
-    className={`box ${hovered ? "hovered" : ""} ${placeholder ? "placeholder" : ""} ${selected ? "selected" : ""}`}       
-    >
-        <div className={hoveredAfter ? "right" : "left"}>{item.label}</div>     
-    </div>)

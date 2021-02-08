@@ -1,10 +1,10 @@
 import React from 'react';
-import { DroppableArea } from './DraggableArea';
+import { Sample } from './components/Sample';
 
 function App() {
   return (
     <div className="App">
-      <DroppableArea />
+      <Sample />
     </div>
   );
 }
